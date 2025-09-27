@@ -28,13 +28,13 @@ pub struct MatchOrder<'info> {
     pub order_book: Account<'info, OrderBook>,
 
     #[account(
-        seeds = [b"order", market.key().as_ref(), trader.key().as_ref()],
+        seeds = [b"order", market.key().as_ref(), signer.key().as_ref()],
         bump = order_bid.order_bump,
     )]
     pub order_bid: Account<'info, Order>,
 
     #[account(
-        seeds = [b"order", market.key().as_ref(), trader.key().as_ref()],
+        seeds = [b"order", market.key().as_ref(), signer.key().as_ref()],
         bump = order_ask.order_bump,
     )]
     pub order_ask: Account<'info, Order>,
@@ -60,7 +60,7 @@ pub struct MatchOrder<'info> {
     #[account(
         mut,
         associated_token::mint = base_mint,
-        associated_token::authority = trader,
+        associated_token::authority = signer,
     )]
     pub trader_base_account: InterfaceAccount<'info, TokenAccount>, // user SOL token account to sell SOL and buy usdc
 
@@ -70,10 +70,15 @@ pub struct MatchOrder<'info> {
 }
 
 impl<'info> MatchOrder<'info> {
-    pub fn create_order(&mut self, price: u64, quantity: u64, bumps: &PlaceAskBumps) -> Result<()> {
+    pub fn create_order(
+        &mut self,
+        price: u64,
+        quantity: u64,
+        bumps: &MatchOrderBumps,
+    ) -> Result<()> {
         self.order.set_inner(Order {
             id: self.market.order_id,
-            trader: self.trader.key(),
+            trader: self.signer.key(),
             order_type: OrderType::Ask,
             price,
             quantity,
